@@ -55,13 +55,13 @@ type Simple struct {
 }
 
 // Encode to CSS
-func (v *Simple) Encode() []byte {
+func (v *Simple) encode(dst *bytes.Buffer) []byte {
 	var ret []byte
 
 	ret = append(ret, v.Element...)
 	if len(v.Classes) > 0 {
-		ret = append(ret, []byte(".")...)
-		ret = append(ret, bytes.Join(v.Classes, []byte("."))...)
+		dst.WriteByte(46)
+		dst.Write(bytes.Join(v.Classes, []byte{46}))
 	}
 
 	if len(v.Attributes) > 0 {
