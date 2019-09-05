@@ -71,17 +71,17 @@ func (v *Simple) Encode() []byte {
 	}
 
 	if len(v.PseudoElements) > 0 {
-		for _, p := range v.PseudoElements {
-			ret = append(ret, []byte("::")...)
-			ret = append(ret, p.Encode()...)
-		}
+		// for _, p := range v.PseudoElements {
+		// 	ret = append(ret, []byte("::")...)
+		// 	// ret = append(ret, p.Encode()...)
+		// }
 	}
 
 	if len(v.PseudoClasses) > 0 {
-		for _, p := range v.PseudoClasses {
-			ret = append(ret, []byte(":")...)
-			ret = append(ret, p.Encode()...)
-		}
+		// for _, p := range v.PseudoClasses {
+		// 	ret = append(ret, []byte(":")...)
+		// 	// ret = append(ret, p.Encode()...)
+		// }
 	}
 
 	if len(v.Negations) > 0 {
@@ -102,15 +102,20 @@ type Pseudo struct {
 }
 
 // Encode to CSS
-func (v *Pseudo) Encode() []byte {
-	var ret []byte
+func (v *Pseudo) encode(dst *bytes.Buffer) error {
+	if _, err := dst.Write(v.Ident); err != nil {
+		return err
+	}
 
-	ret = append(ret, v.Ident...)
-	ret = append(ret, []byte("(")...)
-	ret = append(ret, v.Func...)
-	ret = append(ret, []byte(")")...)
+	dst.WriteByte(40)
 
-	return ret
+	if _, err := dst.Write(v.Func); err != nil {
+		return err
+	}
+
+	dst.WriteByte(41)
+
+	return nil
 }
 
 // Element is a identity node or class name or #ID or universal

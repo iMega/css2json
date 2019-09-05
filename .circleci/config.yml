@@ -7,7 +7,7 @@ jobs:
     steps:
       - checkout
       - run: |
-          make test || exit 1
+          make test
 
 workflows:
   version: 2

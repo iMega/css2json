@@ -1,6 +1,7 @@
 package css
 
 import (
+	"bytes"
 	"reflect"
 	"testing"
 )
@@ -129,22 +130,31 @@ func TestSimple_Encode(t *testing.T) {
 	}
 }
 
-func TestPseudo_Encode(t *testing.T) {
+func TestPseudo_encode(t *testing.T) {
 	type fields struct {
 		Ident []byte
 		Func  []byte
 	}
+	type args struct {
+		dst *bytes.Buffer
+	}
 	tests := []struct {
-		name   string
-		fields fields
-		want   []byte
+		name    string
+		fields  fields
+		args    args
+		want    string
+		wantErr bool
 	}{
 		{
 			fields: fields{
 				Ident: []byte("nth-child"),
 				Func:  []byte("4n"),
 			},
-			want: []byte("nth-child(4n)"),
+			args: args{
+				dst: &bytes.Buffer{},
+			},
+			want:    "nth-child(4n)",
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
@@ -153,8 +163,11 @@ func TestPseudo_Encode(t *testing.T) {
 				Ident: tt.fields.Ident,
 				Func:  tt.fields.Func,
 			}
-			if got := v.Encode(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Pseudo.Encode() = %q, want %q", got, tt.want)
+			if err := v.encode(tt.args.dst); (err != nil) != tt.wantErr {
+				t.Errorf("Pseudo.encode() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if got := tt.args.dst.String(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Pseudo.Encode() = %v, want %v", got, tt.want)
 			}
 		})
 	}
