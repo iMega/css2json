@@ -1,0 +1,16 @@
+version: 2
+
+jobs:
+  tests:
+    machine:
+      enabled: true
+    steps:
+      - checkout
+      - run: |
+          make test || exit 1
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - tests
