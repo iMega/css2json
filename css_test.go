@@ -327,6 +327,44 @@ func TestSelector_encode(t *testing.T) {
 			want:    `div>p`,
 			wantErr: false,
 		},
+		{
+			fields: fields{
+				Simple: Simple{
+					Element: []byte("div"),
+				},
+				Combinates: []Combinate{
+					{
+						Combinator: []byte(">"),
+						Simple: Simple{
+							Element: []byte("p"),
+						},
+					},
+					{
+						Combinator: []byte("~"),
+						Simple: Simple{
+							Element: []byte("a"),
+						},
+					},
+					{
+						Combinator: []byte(" "),
+						Simple: Simple{
+							Element: []byte("span"),
+						},
+					},
+					{
+						Combinator: []byte("+"),
+						Simple: Simple{
+							Element: []byte("b"),
+						},
+					},
+				},
+			},
+			args: args{
+				dst: &bytes.Buffer{},
+			},
+			want:    `div>p~a span+b`,
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
