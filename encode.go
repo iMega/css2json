@@ -36,11 +36,18 @@ var (
 // Statements sets Statement
 type Statements []Statement
 
-// func (v *Statements) encode(dst *bytes.Buffer) error {
-// 	for _, i := range v {
+// Encode statements to CSS
+func Encode(s Statements) ([]byte, error) {
+	buf := &bytes.Buffer{}
 
-// 	}
-// }
+	for _, i := range s {
+		if err := i.encode(buf); err != nil {
+			return nil, err
+		}
+	}
+
+	return buf.Bytes(), nil
+}
 
 // Statement is a building block
 type Statement struct {

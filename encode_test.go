@@ -599,3 +599,55 @@ func TestTextBytes_MarshalJSON(t *testing.T) {
 		})
 	}
 }
+
+func TestEncode(t *testing.T) {
+	type args struct {
+		s Statements
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    []byte
+		wantErr bool
+	}{
+		{
+			args: args{
+				s: Statements{
+					{
+						Ruleset: &Ruleset{
+							Selectors: []Selector{
+								{
+									Simple: Simple{
+										Element: TextBytes("span"),
+									},
+								},
+							},
+							Declarations: []Declaration{
+								{
+									Property: TextBytes("color"),
+									Value: []TextBytes{
+										TextBytes("red"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want:    []byte(`span{color:red}`),
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Encode(tt.args.s)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Encode() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Encode() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
