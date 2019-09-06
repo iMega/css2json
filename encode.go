@@ -36,10 +36,30 @@ var (
 // Statements sets Statement
 type Statements []Statement
 
+// func (v *Statements) encode(dst *bytes.Buffer) error {
+// 	for _, i := range v {
+
+// 	}
+// }
+
 // Statement is a building block
 type Statement struct {
 	AtRule  *AtRule  `json:"atrule,omitempty"`
 	Ruleset *Ruleset `json:"ruleset,omitempty"`
+}
+
+func (v *Statement) encode(dst *bytes.Buffer) error {
+	if v.AtRule != nil {
+		if err := v.AtRule.encode(dst); err != nil {
+			return err
+		}
+	}
+	if v.Ruleset != nil {
+		if err := v.Ruleset.encode(dst); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // AtRule
@@ -57,15 +77,8 @@ func (v *AtRule) encode(dst *bytes.Buffer) error {
 
 	if v.Nested != nil {
 		for _, i := range v.Nested {
-			if i.AtRule != nil {
-				if err := i.AtRule.encode(dst); err != nil {
-					return err
-				}
-			}
-			if i.Ruleset != nil {
-				if err := i.Ruleset.encode(dst); err != nil {
-					return err
-				}
+			if err := i.encode(dst); err != nil {
+				return err
 			}
 		}
 	}
