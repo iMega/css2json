@@ -6,130 +6,6 @@ import (
 	"testing"
 )
 
-func TestDeclaration_String(t *testing.T) {
-	type fields struct {
-		Property string
-		Value    []string
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   string
-	}{
-		{
-			name: "background",
-			fields: fields{
-				Property: "background",
-				Value:    []string{"red"},
-			},
-			want: "background:red",
-		},
-		{
-			name: "border",
-			fields: fields{
-				Property: "border",
-				Value:    []string{"1px", "solid", "red"},
-			},
-			want: "border:1px solid red",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			d := &Declaration{
-				Property: tt.fields.Property,
-				Value:    tt.fields.Value,
-			}
-			if got := d.String(); got != tt.want {
-				t.Errorf("Declaration.String() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestRuleset_String(t *testing.T) {
-	type fields struct {
-		Selectors    []Selector
-		Declarations []Declaration
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   string
-	}{
-		{
-			fields: fields{
-				Declarations: []Declaration{
-					{
-						Property: "background",
-						Value:    []string{"red"},
-					},
-					{
-						Property: "color",
-						Value:    []string{"green"},
-					},
-				},
-			},
-			want: "background:red;color:green",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := &Ruleset{
-				Selectors:    tt.fields.Selectors,
-				Declarations: tt.fields.Declarations,
-			}
-			if got := r.String(); got != tt.want {
-				t.Errorf("Ruleset.String() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestSimple_Encode(t *testing.T) {
-	type fields struct {
-		Element        []byte
-		Classes        [][]byte
-		Attributes     []Attribute
-		PseudoElements []Pseudo
-		PseudoClasses  []Pseudo
-		Negations      []Simple
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   []byte
-	}{
-		{
-			fields: fields{
-				Element: []byte("a"),
-			},
-			want: []byte("a"),
-		},
-		{
-			fields: fields{
-				Element: []byte("a"),
-				Classes: [][]byte{[]byte("test")},
-			},
-			want: []byte("a.test"),
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			v := &Simple{
-				Element:        tt.fields.Element,
-				Classes:        tt.fields.Classes,
-				Attributes:     tt.fields.Attributes,
-				PseudoElements: tt.fields.PseudoElements,
-				PseudoClasses:  tt.fields.PseudoClasses,
-				Negations:      tt.fields.Negations,
-			}
-			if got := v.Encode(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Simple.Encode() = %q, want %q", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestPseudo_encode(t *testing.T) {
 	type fields struct {
 		Ident []byte
@@ -168,6 +44,124 @@ func TestPseudo_encode(t *testing.T) {
 			}
 			if got := tt.args.dst.String(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Pseudo.Encode() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestAttribute_encode(t *testing.T) {
+	type fields struct {
+		Attr     []byte
+		Operator []byte
+		Value    []byte
+		Modifier []byte
+	}
+	type args struct {
+		dst *bytes.Buffer
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			fields: fields{
+				Attr:     []byte("a"),
+				Operator: []byte("*="),
+				Value:    []byte(".com"),
+				Modifier: []byte("s"),
+			},
+			args: args{
+				dst: &bytes.Buffer{},
+			},
+			want: `[a*=".com" s]`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			v := &Attribute{
+				Attr:     tt.fields.Attr,
+				Operator: tt.fields.Operator,
+				Value:    tt.fields.Value,
+				Modifier: tt.fields.Modifier,
+			}
+			if err := v.encode(tt.args.dst); (err != nil) != tt.wantErr {
+				t.Errorf("Attribute.encode() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if got := tt.args.dst.String(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Attribute.Encode() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSimple_encode(t *testing.T) {
+	type fields struct {
+		Element        []byte
+		Classes        [][]byte
+		Attributes     []Attribute
+		PseudoElements []Pseudo
+		PseudoClasses  []Pseudo
+		Negations      []Simple
+	}
+	type args struct {
+		dst *bytes.Buffer
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    string
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			v := &Simple{
+				Element:        tt.fields.Element,
+				Classes:        tt.fields.Classes,
+				Attributes:     tt.fields.Attributes,
+				PseudoElements: tt.fields.PseudoElements,
+				PseudoClasses:  tt.fields.PseudoClasses,
+				Negations:      tt.fields.Negations,
+			}
+			if err := v.encode(tt.args.dst); (err != nil) != tt.wantErr {
+				t.Errorf("Simple.encode() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if got := tt.args.dst.String(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Simple.Encode() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDeclaration_encode(t *testing.T) {
+	type fields struct {
+		Property []byte
+		Value    [][]byte
+	}
+	type args struct {
+		dst *bytes.Buffer
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			v := &Declaration{
+				Property: tt.fields.Property,
+				Value:    tt.fields.Value,
+			}
+			if err := v.encode(tt.args.dst); (err != nil) != tt.wantErr {
+				t.Errorf("Declaration.encode() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

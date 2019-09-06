@@ -2,7 +2,20 @@ package css
 
 import (
 	"bytes"
-	"strings"
+)
+
+const (
+	space              = 32
+	doubleQuote        = 34
+	leftParenthesis    = 40
+	rightParenthesis   = 41
+	period             = 46
+	colon              = 58
+	leftSquareBracket  = 91
+	rightSquareBracket = 93
+	smallN             = 110
+	smallO             = 111
+	smallT             = 116
 )
 
 // Statements sets Statement
@@ -28,11 +41,11 @@ type Ruleset struct {
 }
 
 func (r *Ruleset) String() string {
-	var d []string
-	for _, v := range r.Declarations {
-		d = append(d, v.String())
-	}
-	return strings.Join(d, ";")
+	// var d []string
+	// for _, v := range r.Declarations {
+	// 	d = append(d, v.String())
+	// }
+	return "" //strings.Join(d, ";")
 }
 
 // Selector define the elements to which a set of rules apply.
@@ -55,44 +68,45 @@ type Simple struct {
 }
 
 // Encode to CSS
-func (v *Simple) encode(dst *bytes.Buffer) []byte {
-	var ret []byte
+func (v *Simple) encode(dst *bytes.Buffer) error {
+	if _, err := dst.Write(v.Element); err != nil {
+		return err
+	}
 
-	ret = append(ret, v.Element...)
 	if len(v.Classes) > 0 {
-		dst.WriteByte(46)
-		dst.Write(bytes.Join(v.Classes, []byte{46}))
+		dst.WriteByte(period)
+		dst.Write(bytes.Join(v.Classes, []byte{period}))
 	}
 
 	if len(v.Attributes) > 0 {
-		// for _, a := range v.Attributes {
-		// ret += a.String()
-		// }
+		for _, a := range v.Attributes {
+			a.encode(dst)
+		}
 	}
 
 	if len(v.PseudoElements) > 0 {
-		// for _, p := range v.PseudoElements {
-		// 	ret = append(ret, []byte("::")...)
-		// 	// ret = append(ret, p.Encode()...)
-		// }
+		for _, p := range v.PseudoElements {
+			dst.Write([]byte{colon, colon})
+			p.encode(dst)
+		}
 	}
 
 	if len(v.PseudoClasses) > 0 {
-		// for _, p := range v.PseudoClasses {
-		// 	ret = append(ret, []byte(":")...)
-		// 	// ret = append(ret, p.Encode()...)
-		// }
+		for _, p := range v.PseudoClasses {
+			dst.WriteByte(colon)
+			p.encode(dst)
+		}
 	}
 
 	if len(v.Negations) > 0 {
 		for _, s := range v.Negations {
-			ret = append(ret, []byte(":not(")...)
-			ret = append(ret, s.Encode()...)
-			ret = append(ret, []byte(")")...)
+			dst.Write([]byte{colon, smallN, smallO, smallT, leftParenthesis})
+			s.encode(dst)
+			dst.WriteByte(rightParenthesis)
 		}
 	}
 
-	return ret
+	return nil
 }
 
 // Pseudo is a pseudo-class
@@ -126,13 +140,13 @@ type Element struct {
 }
 
 func (v *Element) String() string {
-	var pc string
+	// var pc string
 
-	if len(v.PseudoClass) > 0 {
-		pc = "::" + v.PseudoClass
-	}
+	// if len(v.PseudoClass) > 0 {
+	// pc = "::" + v.PseudoClass
+	// }
 
-	return v.Value + v.Attribute.String() + pc
+	return "" //v.Value + v.Attribute.String() + pc
 }
 
 // Combinator the relationship between the selectors
@@ -144,26 +158,56 @@ type Combinator struct {
 
 // Attribute is a matcher of selector by attribute
 type Attribute struct {
-	Attr     string `json:"attr"`
-	Operator string `json:"operator,omitempty"`
-	Value    string `json:"value,omitempty"`
-	Modifier string `json:"modifier,omitempty"`
+	Attr     []byte `json:"attr"`
+	Operator []byte `json:"operator,omitempty"`
+	Value    []byte `json:"value,omitempty"`
+	Modifier []byte `json:"modifier,omitempty"`
 }
 
-func (v *Attribute) String() string {
-	var m string
-	if len(v.Modifier) > 0 {
-		m = " " + v.Modifier
+func (v *Attribute) encode(dst *bytes.Buffer) error {
+	dst.WriteByte(leftSquareBracket)
+
+	if _, err := dst.Write(v.Attr); err != nil {
+		return err
 	}
-	return "[" + v.Attr + v.Operator + v.Value + m + "]"
+
+	if _, err := dst.Write(v.Operator); err != nil {
+		return err
+	}
+
+	if len(v.Value) > 0 {
+		dst.WriteByte(doubleQuote)
+		if _, err := dst.Write(v.Value); err != nil {
+			return err
+		}
+		dst.WriteByte(doubleQuote)
+	}
+
+	if len(v.Modifier) > 0 {
+		dst.WriteByte(space)
+		if _, err := dst.Write(v.Modifier); err != nil {
+			return err
+		}
+	}
+
+	dst.WriteByte(rightSquareBracket)
+
+	return nil
 }
 
 // Declaration is setting CSS properties
 type Declaration struct {
-	Property string   `json:"property"`
-	Value    []string `json:"value"`
+	Property []byte   `json:"property"`
+	Value    [][]byte `json:"value"`
 }
 
-func (d *Declaration) String() string {
-	return d.Property + ":" + strings.Join(d.Value, " ")
+func (v *Declaration) encode(dst *bytes.Buffer) error {
+	if _, err := dst.Write(v.Property); err != nil {
+		return err
+	}
+	dst.WriteByte(colon)
+	if _, err := dst.Write(bytes.Join(v.Value, []byte{space})); err != nil {
+		return err
+	}
+	return nil
 }
