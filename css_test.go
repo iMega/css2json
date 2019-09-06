@@ -425,3 +425,63 @@ func TestCombinate_encode(t *testing.T) {
 		})
 	}
 }
+
+func TestRuleset_encode(t *testing.T) {
+	type fields struct {
+		Selectors    []Selector
+		Declarations []Declaration
+	}
+	type args struct {
+		dst *bytes.Buffer
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			fields: fields{
+				Selectors: []Selector{
+					{
+						Simple: Simple{
+							Element: []byte("p"),
+						},
+					},
+					{
+						Simple: Simple{
+							Element: []byte("span"),
+						},
+					},
+				},
+				Declarations: []Declaration{
+					{
+						Property: []byte("color"),
+						Value: [][]byte{
+							[]byte("red"),
+						},
+					},
+				},
+			},
+			args: args{
+				dst: &bytes.Buffer{},
+			},
+			want: `p,span{color:red}`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			v := &Ruleset{
+				Selectors:    tt.fields.Selectors,
+				Declarations: tt.fields.Declarations,
+			}
+			if err := v.encode(tt.args.dst); (err != nil) != tt.wantErr {
+				t.Errorf("Ruleset.encode() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if got := tt.args.dst.String(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Ruleset.Encode() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

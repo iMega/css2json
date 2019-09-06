@@ -2,6 +2,7 @@ package css
 
 import (
 	"bytes"
+	"errors"
 )
 
 const (
@@ -9,13 +10,25 @@ const (
 	doubleQuote        = 34
 	leftParenthesis    = 40
 	rightParenthesis   = 41
+	comma              = 44
 	period             = 46
 	colon              = 58
+	semicolon          = 59
 	leftSquareBracket  = 91
 	rightSquareBracket = 93
 	smallN             = 110
 	smallO             = 111
 	smallT             = 116
+	leftCurlyBracket   = 123
+	rightCurlyBracket  = 125
+)
+
+var (
+	// ErrNotExistsSelector A selector is a chain of one or more
+	// sequences of simple selectors separated by combinators.
+	ErrNotExistsSelector = errors.New("not exists selector")
+	// ErrNotExistsDeclaration
+	ErrNotExistsDeclaration = errors.New("not exists declaration")
 )
 
 // Statements sets Statement
@@ -40,12 +53,36 @@ type Ruleset struct {
 	Declarations []Declaration `json:"declarations"`
 }
 
-func (r *Ruleset) String() string {
-	// var d []string
-	// for _, v := range r.Declarations {
-	// 	d = append(d, v.String())
-	// }
-	return "" //strings.Join(d, ";")
+func (v *Ruleset) encode(dst *bytes.Buffer) error {
+	if len(v.Selectors) == 0 {
+		return ErrNotExistsSelector
+	}
+
+	if len(v.Declarations) == 0 {
+		return ErrNotExistsDeclaration
+	}
+
+	for idx, s := range v.Selectors {
+		if err := s.encode(dst); err != nil {
+			return err
+		}
+		if len(v.Selectors)-1 > idx {
+			dst.WriteByte(comma)
+		}
+	}
+
+	dst.WriteByte(leftCurlyBracket)
+	for idx, d := range v.Declarations {
+		if err := d.encode(dst); err != nil {
+			return err
+		}
+		if len(v.Declarations)-1 > idx {
+			dst.WriteByte(semicolon)
+		}
+	}
+	dst.WriteByte(rightCurlyBracket)
+
+	return nil
 }
 
 // Selector define the elements to which a set of rules apply.
@@ -228,6 +265,34 @@ func (v *Declaration) encode(dst *bytes.Buffer) error {
 	dst.WriteByte(colon)
 	if _, err := dst.Write(bytes.Join(v.Value, []byte{space})); err != nil {
 		return err
+	}
+	return nil
+}
+
+type encoder interface {
+	encode(*bytes.Buffer) error
+}
+
+type writer func(*bytes.Buffer) error
+
+func encodeItemsIfExists(items []encoder, dst *bytes.Buffer, before, after writer) error {
+	if len(items) <= 0 {
+		return nil
+	}
+	for _, i := range items {
+		if before != nil {
+			if err := before(dst); err != nil {
+				return err
+			}
+		}
+		if err := i.encode(dst); err != nil {
+			return err
+		}
+		if after != nil {
+			if err := after(dst); err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }
