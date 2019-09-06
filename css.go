@@ -50,11 +50,24 @@ func (r *Ruleset) String() string {
 
 // Selector define the elements to which a set of rules apply.
 type Selector struct {
-	Element Element `json:"element,omitempty"`
+	Simple     Simple      `json:"simple"`
+	Combinates []Combinate `json:"combinate,omitempty"`
+}
 
-	PseudoElement string `json:"pseudo_element,omitempty"`
+func (v *Selector) encode(dst *bytes.Buffer) error {
+	if err := v.Simple.encode(dst); err != nil {
+		return err
+	}
 
-	Simple Simple `json:"simple"`
+	if len(v.Combinates) > 0 {
+		for _, i := range v.Combinates {
+			if err := i.encode(dst); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 // Simple is a simple selector
@@ -121,13 +134,13 @@ func (v *Pseudo) encode(dst *bytes.Buffer) error {
 		return err
 	}
 
-	dst.WriteByte(40)
-
-	if _, err := dst.Write(v.Func); err != nil {
-		return err
+	if len(v.Func) > 0 {
+		dst.WriteByte(40)
+		if _, err := dst.Write(v.Func); err != nil {
+			return err
+		}
+		dst.WriteByte(41)
 	}
-
-	dst.WriteByte(41)
 
 	return nil
 }
@@ -147,13 +160,6 @@ func (v *Element) String() string {
 	// }
 
 	return "" //v.Value + v.Attribute.String() + pc
-}
-
-// Combinator the relationship between the selectors
-type Combinator struct {
-	First    Selector `json:"first"`
-	Operator string   `json:"operator"`
-	Second   Selector `json:"second"`
 }
 
 // Attribute is a matcher of selector by attribute
@@ -193,6 +199,20 @@ func (v *Attribute) encode(dst *bytes.Buffer) error {
 	dst.WriteByte(rightSquareBracket)
 
 	return nil
+}
+
+// Combinate the relationship between the selectors
+type Combinate struct {
+	Combinator []byte `json:"combinator"`
+	Simple     Simple `json:"simple"`
+}
+
+func (v *Combinate) encode(dst *bytes.Buffer) error {
+	if _, err := dst.Write(v.Combinator); err != nil {
+		return err
+	}
+
+	return v.Simple.encode(dst)
 }
 
 // Declaration is setting CSS properties
