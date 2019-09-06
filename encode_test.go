@@ -1,10 +1,89 @@
-package css
+package css2json
 
 import (
 	"bytes"
+	"encoding/json"
 	"reflect"
 	"testing"
 )
+
+func TestUnmarshalJSON(t *testing.T) {
+	js := []byte(`[
+		{
+		  "ruleset": {
+			"selectors": [
+			  {
+				"simple": {
+				  "element": "p"
+				}
+			  }
+			],
+			"declarations": [
+			  {
+				"property": "color",
+				"value": [
+				  "red"
+				]
+			  },
+			  {
+				"property": "border",
+				"value": [
+				  "1px",
+				  "solid",
+				  "red"
+				]
+			  }
+			]
+		  }
+		}
+	  ]`)
+
+	a := Statements{}
+	json.Unmarshal(js, &a)
+	buf := &bytes.Buffer{}
+	a[0].Ruleset.encode(buf)
+	got := buf.String()
+
+	want := `p{color:red;border:1px solid red}`
+	if want != got {
+		t.Errorf("TestUnmarshalJSON() = %v, want %v", got, want)
+	}
+}
+
+func TestMarshalJSON(t *testing.T) {
+	s := Statements{
+		{
+			Ruleset: &Ruleset{
+				Selectors: []Selector{
+					{
+						Simple: Simple{
+							Element: []byte("p"),
+						},
+					},
+				},
+				Declarations: []Declaration{
+					{
+						Property: TextBytes("color"),
+						Value: []TextBytes{
+							TextBytes("red"),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	b, err := json.Marshal(s)
+	if err != nil {
+		t.Errorf("TestMarshalJSON error = %v", err)
+	}
+
+	want := `[{"ruleset":{"selectors":[{"simple":{"element":"p"}}],"declarations":[{"property":"color","value":["red"]}]}}]`
+	got := string(b)
+	if got != want {
+		t.Errorf("TestMarshalJSON() = %v, want %v", got, want)
+	}
+}
 
 func TestPseudo_encode(t *testing.T) {
 	type fields struct {
@@ -99,8 +178,8 @@ func TestAttribute_encode(t *testing.T) {
 
 func TestSimple_encode(t *testing.T) {
 	type fields struct {
-		Element        []byte
-		Classes        [][]byte
+		Element        TextBytes
+		Classes        []TextBytes
 		Attributes     []Attribute
 		PseudoElements []Pseudo
 		PseudoClasses  []Pseudo
@@ -119,7 +198,7 @@ func TestSimple_encode(t *testing.T) {
 		{
 			fields: fields{
 				Element: []byte("a"),
-				Classes: [][]byte{
+				Classes: []TextBytes{
 					[]byte("myclass"),
 				},
 				Attributes: []Attribute{
@@ -140,8 +219,8 @@ func TestSimple_encode(t *testing.T) {
 		{
 			fields: fields{
 				Element: []byte("a"),
-				Classes: [][]byte{
-					[]byte("myclass"),
+				Classes: []TextBytes{
+					TextBytes("myclass"),
 				},
 			},
 			args: args{
@@ -249,8 +328,8 @@ func TestSimple_encode(t *testing.T) {
 
 func TestDeclaration_encode(t *testing.T) {
 	type fields struct {
-		Property []byte
-		Value    [][]byte
+		Property TextBytes
+		Value    []TextBytes
 	}
 	type args struct {
 		dst *bytes.Buffer
@@ -262,7 +341,19 @@ func TestDeclaration_encode(t *testing.T) {
 		want    string
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			fields: fields{
+				Property: TextBytes("color"),
+				Value: []TextBytes{
+					TextBytes("red"),
+				},
+			},
+			args: args{
+				dst: &bytes.Buffer{},
+			},
+			want:    `color:red`,
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -458,8 +549,8 @@ func TestRuleset_encode(t *testing.T) {
 				Declarations: []Declaration{
 					{
 						Property: []byte("color"),
-						Value: [][]byte{
-							[]byte("red"),
+						Value: []TextBytes{
+							TextBytes("red"),
 						},
 					},
 				},
@@ -481,6 +572,29 @@ func TestRuleset_encode(t *testing.T) {
 			}
 			if got := tt.args.dst.String(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Ruleset.Encode() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestTextBytes_MarshalJSON(t *testing.T) {
+	tests := []struct {
+		name    string
+		v       TextBytes
+		want    []byte
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.v.MarshalJSON()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("TextBytes.MarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("TextBytes.MarshalJSON() = %v, want %v", got, tt.want)
 			}
 		})
 	}

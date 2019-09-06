@@ -1,7 +1,8 @@
-package css
+package css2json
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 )
 
@@ -14,6 +15,7 @@ const (
 	period             = 46
 	colon              = 58
 	semicolon          = 59
+	atSign             = 64
 	leftSquareBracket  = 91
 	rightSquareBracket = 93
 	smallN             = 110
@@ -36,15 +38,39 @@ type Statements []Statement
 
 // Statement is a building block
 type Statement struct {
-	Identifier  string            `json:"type"`
-	Information interface{}       `json:"information,omitempty"`
-	Nested      *StatementRuleset `json:"nested,omitempty"`
+	AtRule  *AtRule  `json:"atrule,omitempty"`
+	Ruleset *Ruleset `json:"ruleset,omitempty"`
 }
 
-// StatementRuleset is nested block
-type StatementRuleset struct {
-	Statement Statement `json:"statement"`
-	Ruleset   Ruleset   `json:"ruleset"`
+// AtRule
+type AtRule struct {
+	Identifier  TextBytes    `json:"type"`
+	Information interface{}  `json:"information,omitempty"`
+	Nested      []*Statement `json:"nested,omitempty"`
+}
+
+func (v *AtRule) encode(dst *bytes.Buffer) error {
+	dst.WriteByte(atSign)
+	if _, err := dst.Write(v.Identifier); err != nil {
+		return err
+	}
+
+	if v.Nested != nil {
+		for _, i := range v.Nested {
+			if i.AtRule != nil {
+				if err := i.AtRule.encode(dst); err != nil {
+					return err
+				}
+			}
+			if i.Ruleset != nil {
+				if err := i.Ruleset.encode(dst); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 // Ruleset is a collection of CSS declarations
@@ -109,8 +135,8 @@ func (v *Selector) encode(dst *bytes.Buffer) error {
 
 // Simple is a simple selector
 type Simple struct {
-	Element        []byte      `json:"element,omitempty"`
-	Classes        [][]byte    `json:"classes,omitempty"`
+	Element        TextBytes   `json:"element,omitempty"`
+	Classes        []TextBytes `json:"classes,omitempty"`
 	Attributes     []Attribute `json:"attributes,omitempty"`
 	PseudoElements []Pseudo    `json:"pseudo_elements,omitempty"`
 	PseudoClasses  []Pseudo    `json:"pseudo_classes,omitempty"`
@@ -125,7 +151,7 @@ func (v *Simple) encode(dst *bytes.Buffer) error {
 
 	if len(v.Classes) > 0 {
 		dst.WriteByte(period)
-		dst.Write(bytes.Join(v.Classes, []byte{period}))
+		dst.Write(bytes.Join(sliceValuesRaw(v.Classes), []byte{period}))
 	}
 
 	if len(v.Attributes) > 0 {
@@ -161,8 +187,8 @@ func (v *Simple) encode(dst *bytes.Buffer) error {
 
 // Pseudo is a pseudo-class
 type Pseudo struct {
-	Ident []byte `json:"ident,omitempty"`
-	Func  []byte `json:"func,omitempty"`
+	Ident TextBytes `json:"ident,omitempty"`
+	Func  TextBytes `json:"func,omitempty"`
 }
 
 // Encode to CSS
@@ -182,29 +208,12 @@ func (v *Pseudo) encode(dst *bytes.Buffer) error {
 	return nil
 }
 
-// Element is a identity node or class name or #ID or universal
-type Element struct {
-	Value       string    `json:"value"`
-	Attribute   Attribute `json:"attribute,omitempty"`
-	PseudoClass string    `json:"pseudo_class,omitempty"`
-}
-
-func (v *Element) String() string {
-	// var pc string
-
-	// if len(v.PseudoClass) > 0 {
-	// pc = "::" + v.PseudoClass
-	// }
-
-	return "" //v.Value + v.Attribute.String() + pc
-}
-
 // Attribute is a matcher of selector by attribute
 type Attribute struct {
-	Attr     []byte `json:"attr"`
-	Operator []byte `json:"operator,omitempty"`
-	Value    []byte `json:"value,omitempty"`
-	Modifier []byte `json:"modifier,omitempty"`
+	Attr     TextBytes `json:"attr"`
+	Operator TextBytes `json:"operator,omitempty"`
+	Value    TextBytes `json:"value,omitempty"`
+	Modifier TextBytes `json:"modifier,omitempty"`
 }
 
 func (v *Attribute) encode(dst *bytes.Buffer) error {
@@ -240,8 +249,8 @@ func (v *Attribute) encode(dst *bytes.Buffer) error {
 
 // Combinate the relationship between the selectors
 type Combinate struct {
-	Combinator []byte `json:"combinator"`
-	Simple     Simple `json:"simple"`
+	Combinator TextBytes `json:"combinator"`
+	Simple     Simple    `json:"simple"`
 }
 
 func (v *Combinate) encode(dst *bytes.Buffer) error {
@@ -254,8 +263,8 @@ func (v *Combinate) encode(dst *bytes.Buffer) error {
 
 // Declaration is setting CSS properties
 type Declaration struct {
-	Property []byte   `json:"property"`
-	Value    [][]byte `json:"value"`
+	Property TextBytes   `json:"property"`
+	Value    []TextBytes `json:"value,string"`
 }
 
 func (v *Declaration) encode(dst *bytes.Buffer) error {
@@ -263,9 +272,37 @@ func (v *Declaration) encode(dst *bytes.Buffer) error {
 		return err
 	}
 	dst.WriteByte(colon)
-	if _, err := dst.Write(bytes.Join(v.Value, []byte{space})); err != nil {
+	data := bytes.Join(sliceValuesRaw(v.Value), []byte{space})
+	if _, err := dst.Write(data); err != nil {
 		return err
 	}
+	return nil
+}
+
+func sliceValuesRaw(v []TextBytes) [][]byte {
+	ret := make([][]byte, len(v))
+	for k, i := range v {
+		ret[k] = i
+	}
+	return ret
+}
+
+// TextBytes is a hack to get JSON to emit a []byte as a string
+type TextBytes []byte
+
+// MarshalJSON marshal TextBytes
+func (v TextBytes) MarshalJSON() ([]byte, error) {
+	return json.Marshal(string(v))
+}
+
+// UnmarshalJSON unmarshal TextBytes
+func (v *TextBytes) UnmarshalJSON(b []byte) error {
+	var a string
+	if err := json.Unmarshal(b, &a); err != nil {
+		return err
+	}
+	*v = TextBytes(a)
+
 	return nil
 }
 
