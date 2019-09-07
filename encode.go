@@ -286,8 +286,9 @@ func (v *Combinate) encode(dst *bytes.Buffer) error {
 
 // Declaration is setting CSS properties
 type Declaration struct {
-	Property TextBytes   `json:"property"`
-	Value    []TextBytes `json:"value,string"`
+	Property   TextBytes   `json:"property"`
+	Value      []TextBytes `json:"value,omitempty"`
+	ValueComma []TextBytes `json:"value_comma,omitempty"`
 }
 
 func (v *Declaration) encode(dst *bytes.Buffer) error {
@@ -295,10 +296,21 @@ func (v *Declaration) encode(dst *bytes.Buffer) error {
 		return err
 	}
 	dst.WriteByte(colon)
-	data := bytes.Join(sliceValuesRaw(v.Value), []byte{space})
-	if _, err := dst.Write(data); err != nil {
-		return err
+
+	if len(v.Value) > 0 {
+		data := bytes.Join(sliceValuesRaw(v.Value), []byte{space})
+		if _, err := dst.Write(data); err != nil {
+			return err
+		}
 	}
+
+	if len(v.ValueComma) > 0 {
+		data := bytes.Join(sliceValuesRaw(v.ValueComma), []byte{comma})
+		if _, err := dst.Write(data); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -404,7 +416,9 @@ func (v *Identifier) encode(dst *bytes.Buffer) error {
 		return err
 	}
 
-	dst.WriteByte(space)
+	if v.Information != nil {
+		dst.WriteByte(space)
+	}
 
 	if err := v.Information.encode(dst); err != nil {
 		return err
@@ -421,6 +435,8 @@ type Information interface {
 var identifierTypes = map[string]interface{}{
 	"charset":   &CharsetInformation{},
 	"keyframes": &KeyframesInformation{},
+	"media":     &MediaInformation{},
+	"font-face": &FontFaceInformation{},
 }
 
 // CharsetInformation https://developer.mozilla.org/en-US/docs/Web/CSS/@charset
@@ -484,13 +500,13 @@ func (v *Query) encode(dst *bytes.Buffer) error {
 		if err := v.Type.encode(dst); err != nil {
 			return err
 		}
-		if len(v.Conditions) > 0 {
-			dst.WriteByte(space)
-		}
 	}
 
 	if len(v.Conditions) > 0 {
 		for _, i := range v.Conditions {
+			if v.Type != nil {
+				dst.WriteByte(space)
+			}
 			if err := i.encode(dst); err != nil {
 				return err
 			}
@@ -549,6 +565,26 @@ func (v *Condition) encode(dst *bytes.Buffer) error {
 	}
 
 	dst.WriteByte(rightParenthesis)
+
+	return nil
+}
+
+// FontFaceInformation https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face
+type FontFaceInformation struct {
+	Declarations []Declaration `json:"declarations"`
+}
+
+func (v *FontFaceInformation) encode(dst *bytes.Buffer) error {
+	dst.WriteByte(leftCurlyBracket)
+	for idx, i := range v.Declarations {
+		if err := i.encode(dst); err != nil {
+			return err
+		}
+		if len(v.Declarations)-1 > idx {
+			dst.WriteByte(semicolon)
+		}
+	}
+	dst.WriteByte(rightCurlyBracket)
 
 	return nil
 }

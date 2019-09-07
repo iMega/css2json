@@ -625,7 +625,7 @@ func TestEncode(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    string
+		want    []byte
 		wantErr bool
 	}{
 		{
@@ -662,7 +662,7 @@ func TestEncode(t *testing.T) {
 					},
 				},
 			},
-			want:    `@charset "utf-8";span{color:red};`,
+			want:    []byte(`@charset "utf-8";span{color:red};`),
 			wantErr: false,
 		},
 		{
@@ -686,7 +686,7 @@ func TestEncode(t *testing.T) {
 												},
 												{
 													Operator: TextBytes("and"),
-													Feature:  TextBytes("max-width"),
+													Feature:  TextBytes("min-width"),
 													Value:    TextBytes("520px"),
 												},
 											},
@@ -694,8 +694,58 @@ func TestEncode(t *testing.T) {
 										{
 											Conditions: []Condition{
 												{
-													Feature: TextBytes("max-width"),
+													Feature: TextBytes("min-width"),
 													Value:   TextBytes("1151px"),
+												},
+											},
+										},
+									},
+								},
+							},
+							Nested: []*Statement{
+								{
+									Ruleset: &Ruleset{
+										Selectors: []Selector{
+											{
+												Simple: Simple{
+													Element: TextBytes("#sidebar"),
+												},
+												Combinates: []Combinate{
+													{
+														Combinator: TextBytes(" "),
+														Simple: Simple{
+															Element: TextBytes("ul"),
+														},
+													},
+													{
+														Combinator: TextBytes(" "),
+														Simple: Simple{
+															Element: TextBytes("li"),
+														},
+													},
+													{
+														Combinator: TextBytes(" "),
+														Simple: Simple{
+															Element: TextBytes("a"),
+														},
+													},
+												},
+											},
+										},
+										Declarations: []Declaration{
+											{
+												Property: TextBytes("padding-left"),
+												Value: []TextBytes{
+													TextBytes("21px"),
+												},
+											},
+											{
+												Property: TextBytes("background"),
+												Value: []TextBytes{
+													TextBytes("url(../images/email.png)"),
+													TextBytes("left"),
+													TextBytes("center"),
+													TextBytes("no-repeat"),
 												},
 											},
 										},
@@ -704,49 +754,40 @@ func TestEncode(t *testing.T) {
 							},
 						},
 					},
+				},
+			},
+			want:    []byte(`@media all and (max-width:699px) and (min-width:520px),(min-width:1151px){#sidebar ul li a{padding-left:21px;background:url(../images/email.png) left center no-repeat}};`),
+			wantErr: false,
+		},
+		{
+			args: args{
+				s: Statements{
 					{
-						Ruleset: &Ruleset{
-							Selectors: []Selector{
-								{
-									Simple: Simple{
-										Element: TextBytes("#sidebar"),
-									},
-									Combinates: []Combinate{
+						AtRule: &AtRule{
+							Identifier: Identifier{
+								Type: TextBytes("font-face"),
+								Information: &FontFaceInformation{
+									Declarations: []Declaration{
 										{
-											Combinator: TextBytes(" "),
-											Simple: Simple{
-												Element: TextBytes("ul"),
+											Property: TextBytes("font-family"),
+											Value: []TextBytes{
+												TextBytes("MyHelvetica"),
 											},
 										},
 										{
-											Combinator: TextBytes(" "),
-											Simple: Simple{
-												Element: TextBytes("li"),
+											Property: TextBytes("src"),
+											ValueComma: []TextBytes{
+												TextBytes(`local("Helvetica Neue Bold")`),
+												TextBytes(`local(HelveticaNeue-Bold)`),
+												TextBytes(`url(MgOpenModernaBold.ttf)`),
 											},
 										},
 										{
-											Combinator: TextBytes(" "),
-											Simple: Simple{
-												Element: TextBytes("a"),
+											Property: TextBytes("font-weight"),
+											Value: []TextBytes{
+												TextBytes("700"),
 											},
 										},
-									},
-								},
-							},
-							Declarations: []Declaration{
-								{
-									Property: TextBytes("padding-left"),
-									Value: []TextBytes{
-										TextBytes("21px"),
-									},
-								},
-								{
-									Property: TextBytes("background"),
-									Value: []TextBytes{
-										TextBytes("url(../images/email.png)"),
-										TextBytes("left"),
-										TextBytes("center"),
-										TextBytes("no-repeat"),
 									},
 								},
 							},
@@ -754,7 +795,7 @@ func TestEncode(t *testing.T) {
 					},
 				},
 			},
-			want:    `@media all and (max-width: 699px) and (min-width: 520px),(min-width: 1151px){#sidebar ul li a{padding-left:21px;background:url(../images/email.png) left center no-repeat}}`,
+			want:    []byte(`@font-face {font-family:MyHelvetica;src:local("Helvetica Neue Bold"),local(HelveticaNeue-Bold),url(MgOpenModernaBold.ttf);font-weight:700};`),
 			wantErr: false,
 		},
 	}
@@ -766,7 +807,7 @@ func TestEncode(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Encode() = %q, want %q", got, tt.want)
+				t.Errorf("Encode() = \n%q, want \n%q", got, tt.want)
 			}
 		})
 	}
