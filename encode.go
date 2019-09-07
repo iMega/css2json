@@ -473,6 +473,7 @@ func (v *MediaInformation) encode(dst *bytes.Buffer) error {
 	return nil
 }
 
+// Query is a media-condition
 type Query struct {
 	Type       *Type       `json:"type,omitempty"`
 	Conditions []Condition `json:"conditions,omitempty"`
@@ -499,6 +500,7 @@ func (v *Query) encode(dst *bytes.Buffer) error {
 	return nil
 }
 
+// Type is a media type
 type Type struct {
 	Operator TextBytes `json:"operator,omitempty"`
 	Value    TextBytes `json:"value"`
@@ -519,6 +521,7 @@ func (v *Type) encode(dst *bytes.Buffer) error {
 	return nil
 }
 
+// Condition is a media condition
 type Condition struct {
 	Operator TextBytes `json:"operator,omitempty"`
 	Feature  TextBytes `json:"feature"`
