@@ -450,3 +450,102 @@ func (v *KeyframesInformation) encode(dst *bytes.Buffer) error {
 
 	return nil
 }
+
+// MediaInformation https://developer.mozilla.org/en-US/docs/Web/CSS/@media
+type MediaInformation struct {
+	Queries []Query `json:"queries"`
+}
+
+func (v *MediaInformation) encode(dst *bytes.Buffer) error {
+	if len(v.Queries) == 0 {
+		return nil
+	}
+
+	for idx, i := range v.Queries {
+		if err := i.encode(dst); err != nil {
+			return err
+		}
+		if len(v.Queries)-1 > idx {
+			dst.WriteByte(comma)
+		}
+	}
+
+	return nil
+}
+
+type Query struct {
+	Type       *Type       `json:"type,omitempty"`
+	Conditions []Condition `json:"conditions,omitempty"`
+}
+
+func (v *Query) encode(dst *bytes.Buffer) error {
+	if v.Type != nil {
+		if err := v.Type.encode(dst); err != nil {
+			return err
+		}
+		if len(v.Conditions) > 0 {
+			dst.WriteByte(space)
+		}
+	}
+
+	if len(v.Conditions) > 0 {
+		for _, i := range v.Conditions {
+			if err := i.encode(dst); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+type Type struct {
+	Operator TextBytes `json:"operator,omitempty"`
+	Value    TextBytes `json:"value"`
+}
+
+func (v *Type) encode(dst *bytes.Buffer) error {
+	if len(v.Operator) > 0 {
+		if _, err := dst.Write(v.Operator); err != nil {
+			return err
+		}
+		dst.WriteByte(space)
+	}
+
+	if _, err := dst.Write(v.Value); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type Condition struct {
+	Operator TextBytes `json:"operator,omitempty"`
+	Feature  TextBytes `json:"feature"`
+	Value    TextBytes `json:"value"`
+}
+
+func (v *Condition) encode(dst *bytes.Buffer) error {
+	if len(v.Operator) > 0 {
+		if _, err := dst.Write(v.Operator); err != nil {
+			return err
+		}
+		dst.WriteByte(space)
+	}
+
+	dst.WriteByte(leftParenthesis)
+
+	if _, err := dst.Write(v.Feature); err != nil {
+		return err
+	}
+
+	dst.WriteByte(colon)
+
+	if _, err := dst.Write(v.Value); err != nil {
+		return err
+	}
+
+	dst.WriteByte(rightParenthesis)
+
+	return nil
+}

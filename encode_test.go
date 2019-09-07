@@ -1018,3 +1018,217 @@ func TestKeyframesInformation_encode(t *testing.T) {
 		})
 	}
 }
+
+func TestMediaInformation_encode(t *testing.T) {
+	type fields struct {
+		Queries []Query
+	}
+	type args struct {
+		dst *bytes.Buffer
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			fields: fields{
+				Queries: []Query{
+					{
+						Type: &Type{
+							Value: TextBytes("screen"),
+						},
+						Conditions: []Condition{
+							{
+								Operator: TextBytes("and"),
+								Feature:  TextBytes("max-width"),
+								Value:    TextBytes("650px"),
+							},
+						},
+					},
+				},
+			},
+			args: args{
+				dst: &bytes.Buffer{},
+			},
+			want:    `screen and (max-width:650px)`,
+			wantErr: false,
+		},
+		{
+			fields: fields{
+				Queries: []Query{
+					{
+						Type: &Type{
+							Value: TextBytes("screen"),
+						},
+					},
+					{
+						Type: &Type{
+							Value: TextBytes("print"),
+						},
+					},
+				},
+			},
+			args: args{
+				dst: &bytes.Buffer{},
+			},
+			want:    `screen,print`,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			v := &MediaInformation{
+				Queries: tt.fields.Queries,
+			}
+			if err := v.encode(tt.args.dst); (err != nil) != tt.wantErr {
+				t.Errorf("MediaInformation.encode() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if got := tt.args.dst.String(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("MediaInformation.Encode() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestQuery_encode(t *testing.T) {
+	type fields struct {
+		Type       *Type
+		Conditions []Condition
+	}
+	type args struct {
+		dst *bytes.Buffer
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			fields: fields{
+				Type: &Type{
+					Value: TextBytes("screen"),
+				},
+				Conditions: []Condition{
+					{
+						Operator: TextBytes("and"),
+						Feature:  TextBytes("max-width"),
+						Value:    TextBytes("650px"),
+					},
+				},
+			},
+			args: args{
+				dst: &bytes.Buffer{},
+			},
+			want:    `screen and (max-width:650px)`,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			v := &Query{
+				Type:       tt.fields.Type,
+				Conditions: tt.fields.Conditions,
+			}
+			if err := v.encode(tt.args.dst); (err != nil) != tt.wantErr {
+				t.Errorf("Query.encode() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if got := tt.args.dst.String(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Query.Encode() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestType_encode(t *testing.T) {
+	type fields struct {
+		Operator TextBytes
+		Value    TextBytes
+	}
+	type args struct {
+		dst *bytes.Buffer
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			fields: fields{
+				Operator: TextBytes("only"),
+				Value:    TextBytes("screen"),
+			},
+			args: args{
+				dst: &bytes.Buffer{},
+			},
+			want:    `only screen`,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			v := &Type{
+				Operator: tt.fields.Operator,
+				Value:    tt.fields.Value,
+			}
+			if err := v.encode(tt.args.dst); (err != nil) != tt.wantErr {
+				t.Errorf("Type.encode() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if got := tt.args.dst.String(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Type.Encode() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCondition_encode(t *testing.T) {
+	type fields struct {
+		Operator TextBytes
+		Feature  TextBytes
+		Value    TextBytes
+	}
+	type args struct {
+		dst *bytes.Buffer
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			fields: fields{
+				Operator: TextBytes("and"),
+				Feature:  TextBytes("max-width"),
+				Value:    TextBytes("650px"),
+			},
+			args: args{
+				dst: &bytes.Buffer{},
+			},
+			want:    `and (max-width:650px)`,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			v := &Condition{
+				Operator: tt.fields.Operator,
+				Feature:  tt.fields.Feature,
+				Value:    tt.fields.Value,
+			}
+			if err := v.encode(tt.args.dst); (err != nil) != tt.wantErr {
+				t.Errorf("Condition.encode() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if got := tt.args.dst.String(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Condition.Encode() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
