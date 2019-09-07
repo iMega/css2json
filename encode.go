@@ -31,6 +31,8 @@ var (
 	ErrNotExistsSelector = errors.New("not exists selector")
 	// ErrNotExistsDeclaration
 	ErrNotExistsDeclaration = errors.New("not exists declaration")
+	// ErrNotExistsTypeIdentifier
+	ErrNotExistsTypeIdentifier = errors.New("not exists type of identifier")
 )
 
 // Statements sets Statement
@@ -78,6 +80,12 @@ type AtRule struct {
 func (v *AtRule) encode(dst *bytes.Buffer) error {
 	dst.WriteByte(atSign)
 	if _, err := dst.Write(v.Identifier.Type); err != nil {
+		return err
+	}
+
+	dst.WriteByte(space)
+
+	if err := v.Identifier.Information.encode(dst); err != nil {
 		return err
 	}
 
@@ -356,13 +364,13 @@ func encodeItemsIfExists(items []encoder, dst *bytes.Buffer, before, after write
 // Identifier is a at-rule
 type Identifier struct {
 	Type        TextBytes   `json:"type"`
-	Information interface{} `json:"info,omitempty"`
+	Information Information `json:"info,omitempty"`
 }
 
 // UnmarshalJSON unmarshal TextBytes
 func (v *Identifier) UnmarshalJSON(b []byte) error {
 	var (
-		info  interface{}
+		info  Information
 		stuff map[string]interface{}
 	)
 
@@ -375,10 +383,11 @@ func (v *Identifier) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	switch stuff["type"] {
-	case "charset":
-		info = &CharsetInformation{}
+	ident := stuff["type"].(string)
+	if len(ident) == 0 {
+		return ErrNotExistsTypeIdentifier
 	}
+	info = identifierTypes[ident].(encoder)
 
 	if err := json.Unmarshal(tmp, info); err != nil {
 		return err
@@ -388,7 +397,25 @@ func (v *Identifier) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+type Information interface {
+	encoder
+}
+
+var identifierTypes = map[string]interface{}{
+	"charset": &CharsetInformation{},
+}
+
 // CharsetInformation https://developer.mozilla.org/en-US/docs/Web/CSS/@charset
 type CharsetInformation struct {
 	Value TextBytes `json:"value"`
+}
+
+func (v *CharsetInformation) encode(dst *bytes.Buffer) error {
+	dst.WriteByte(doubleQuote)
+	if _, err := dst.Write(v.Value); err != nil {
+		return err
+	}
+	dst.WriteByte(doubleQuote)
+
+	return nil
 }

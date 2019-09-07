@@ -92,7 +92,7 @@ func TestMarshalJSON(t *testing.T) {
 		t.Errorf("TestMarshalJSON error = %v", err)
 	}
 
-	want := `[{"atrule":{"ident":{"type":"char","info":{"value":"utf-8"}}},"ruleset":{"selectors":[{"simple":{"element":"p"}}],"declarations":[{"property":"color","value":["red"]}]}}]`
+	want := `[{"atrule":{"ident":{"type":"charset","info":{"value":"utf-8"}}},"ruleset":{"selectors":[{"simple":{"element":"p"}}],"declarations":[{"property":"color","value":["red"]}]}}]`
 	got := string(b)
 	if got != want {
 		t.Errorf("TestMarshalJSON() = %v, want %v", got, want)
@@ -661,6 +661,169 @@ func TestEncode(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Encode() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestStatement_encode(t *testing.T) {
+	type fields struct {
+		AtRule  *AtRule
+		Ruleset *Ruleset
+	}
+	type args struct {
+		dst *bytes.Buffer
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			fields: fields{
+				AtRule: &AtRule{
+					Identifier: Identifier{
+						Type: TextBytes("charset"),
+						Information: &CharsetInformation{
+							Value: TextBytes("utf-8"),
+						},
+					},
+				},
+			},
+			args: args{
+				dst: &bytes.Buffer{},
+			},
+			want: `@charset "utf-8"`,
+		},
+		{
+			fields: fields{
+				Ruleset: &Ruleset{
+					Selectors: []Selector{
+						{
+							Simple: Simple{
+								Element: []byte("p"),
+							},
+						},
+						{
+							Simple: Simple{
+								Element: []byte("span"),
+							},
+						},
+					},
+					Declarations: []Declaration{
+						{
+							Property: []byte("color"),
+							Value: []TextBytes{
+								TextBytes("red"),
+							},
+						},
+					},
+				},
+			},
+			args: args{
+				dst: &bytes.Buffer{},
+			},
+			want: `p,span{color:red}`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			v := &Statement{
+				AtRule:  tt.fields.AtRule,
+				Ruleset: tt.fields.Ruleset,
+			}
+			if err := v.encode(tt.args.dst); (err != nil) != tt.wantErr {
+				t.Errorf("Statement.encode() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if got := tt.args.dst.String(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Statement.Encode() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestAtRule_encode(t *testing.T) {
+	type fields struct {
+		Identifier Identifier
+		Nested     []*Statement
+	}
+	type args struct {
+		dst *bytes.Buffer
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			fields: fields{
+				Identifier: Identifier{
+					Type: TextBytes("charset"),
+					Information: &CharsetInformation{
+						Value: TextBytes("utf-8"),
+					},
+				},
+			},
+			args: args{
+				dst: &bytes.Buffer{},
+			},
+			want: `@charset "utf-8"`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			v := &AtRule{
+				Identifier: tt.fields.Identifier,
+				Nested:     tt.fields.Nested,
+			}
+			if err := v.encode(tt.args.dst); (err != nil) != tt.wantErr {
+				t.Errorf("AtRule.encode() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if got := tt.args.dst.String(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("AtRule.Encode() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCharsetInformation_encode(t *testing.T) {
+	type fields struct {
+		Value TextBytes
+	}
+	type args struct {
+		dst *bytes.Buffer
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			fields: fields{
+				Value: TextBytes("utf-8"),
+			},
+			args: args{
+				dst: &bytes.Buffer{},
+			},
+			want: `"utf-8"`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			v := &CharsetInformation{
+				Value: tt.fields.Value,
+			}
+			if err := v.encode(tt.args.dst); (err != nil) != tt.wantErr {
+				t.Errorf("CharsetInformation.encode() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if got := tt.args.dst.String(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("CharsetInformation.Encode() = %v, want %v", got, tt.want)
 			}
 		})
 	}
