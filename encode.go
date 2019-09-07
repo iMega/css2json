@@ -84,11 +84,13 @@ func (v *AtRule) encode(dst *bytes.Buffer) error {
 	}
 
 	if v.Nested != nil {
+		dst.WriteByte(leftCurlyBracket)
 		for _, i := range v.Nested {
 			if err := i.encode(dst); err != nil {
 				return err
 			}
 		}
+		dst.WriteByte(rightCurlyBracket)
 	}
 
 	return nil

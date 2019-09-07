@@ -787,6 +787,85 @@ func TestAtRule_encode(t *testing.T) {
 			},
 			want: `@charset "utf-8"`,
 		},
+		{
+			fields: fields{
+				Identifier: Identifier{
+					Type: TextBytes("keyframes"),
+					Information: &KeyframesInformation{
+						Value: TextBytes("slide-right"),
+					},
+				},
+				Nested: []*Statement{
+					{
+						Ruleset: &Ruleset{
+							Selectors: []Selector{
+								{
+									Simple: Simple{
+										Element: TextBytes("from"),
+									},
+								},
+							},
+							Declarations: []Declaration{
+								{
+									Property: TextBytes("margin-left"),
+									Value: []TextBytes{
+										TextBytes("0px"),
+									},
+								},
+							},
+						},
+					},
+					{
+						Ruleset: &Ruleset{
+							Selectors: []Selector{
+								{
+									Simple: Simple{
+										Element: TextBytes("50%"),
+									},
+								},
+							},
+							Declarations: []Declaration{
+								{
+									Property: TextBytes("margin-left"),
+									Value: []TextBytes{
+										TextBytes("110px"),
+									},
+								},
+								{
+									Property: TextBytes("opacity"),
+									Value: []TextBytes{
+										TextBytes("0.9"),
+									},
+								},
+							},
+						},
+					},
+					{
+						Ruleset: &Ruleset{
+							Selectors: []Selector{
+								{
+									Simple: Simple{
+										Element: TextBytes("to"),
+									},
+								},
+							},
+							Declarations: []Declaration{
+								{
+									Property: TextBytes("margin-left"),
+									Value: []TextBytes{
+										TextBytes("200px"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			args: args{
+				dst: &bytes.Buffer{},
+			},
+			want: `@keyframes slide-right{from{margin-left:0px}50%{margin-left:110px;opacity:0.9}to{margin-left:200px}}`,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
