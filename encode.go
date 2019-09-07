@@ -353,6 +353,7 @@ func encodeItemsIfExists(items []encoder, dst *bytes.Buffer, before, after write
 	return nil
 }
 
+// Identifier is a at-rule
 type Identifier struct {
 	Type        TextBytes   `json:"type"`
 	Information interface{} `json:"info,omitempty"`

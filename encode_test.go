@@ -62,6 +62,9 @@ func TestMarshalJSON(t *testing.T) {
 			AtRule: &AtRule{
 				Identifier: Identifier{
 					Type: TextBytes("char"),
+					Information: &CharsetInformation{
+						Value: TextBytes("utf-8"),
+					},
 				},
 			},
 			Ruleset: &Ruleset{
@@ -89,7 +92,7 @@ func TestMarshalJSON(t *testing.T) {
 		t.Errorf("TestMarshalJSON error = %v", err)
 	}
 
-	want := `[{"ruleset":{"selectors":[{"simple":{"element":"p"}}],"declarations":[{"property":"color","value":["red"]}]}}]`
+	want := `[{"atrule":{"ident":{"type":"char","info":{"value":"utf-8"}}},"ruleset":{"selectors":[{"simple":{"element":"p"}}],"declarations":[{"property":"color","value":["red"]}]}}]`
 	got := string(b)
 	if got != want {
 		t.Errorf("TestMarshalJSON() = %v, want %v", got, want)
