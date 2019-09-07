@@ -72,7 +72,7 @@ func (v *Statement) encode(dst *bytes.Buffer) error {
 	return nil
 }
 
-// AtRule
+// AtRule https://developer.mozilla.org/en-US/docs/Web/CSS/At-rule
 type AtRule struct {
 	Identifier Identifier   `json:"ident"`
 	Nested     []*Statement `json:"nested,omitempty"`
@@ -417,7 +417,8 @@ type Information interface {
 }
 
 var identifierTypes = map[string]interface{}{
-	"charset": &CharsetInformation{},
+	"charset":   &CharsetInformation{},
+	"keyframes": &KeyframesInformation{},
 }
 
 // CharsetInformation https://developer.mozilla.org/en-US/docs/Web/CSS/@charset
@@ -431,6 +432,19 @@ func (v *CharsetInformation) encode(dst *bytes.Buffer) error {
 		return err
 	}
 	dst.WriteByte(doubleQuote)
+
+	return nil
+}
+
+// KeyframesInformation https://developer.mozilla.org/en-US/docs/Web/CSS/@keyframes
+type KeyframesInformation struct {
+	Value TextBytes `json:"value"`
+}
+
+func (v *KeyframesInformation) encode(dst *bytes.Buffer) error {
+	if _, err := dst.Write(v.Value); err != nil {
+		return err
+	}
 
 	return nil
 }

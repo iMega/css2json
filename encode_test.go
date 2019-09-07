@@ -899,3 +899,43 @@ func TestIdentifier_encode(t *testing.T) {
 		})
 	}
 }
+
+func TestKeyframesInformation_encode(t *testing.T) {
+	type fields struct {
+		Value TextBytes
+	}
+	type args struct {
+		dst *bytes.Buffer
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			fields: fields{
+				Value: TextBytes("name"),
+			},
+			args: args{
+				dst: &bytes.Buffer{},
+			},
+			want:    `name`,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			v := &KeyframesInformation{
+				Value: tt.fields.Value,
+			}
+			if err := v.encode(tt.args.dst); (err != nil) != tt.wantErr {
+				t.Errorf("KeyframesInformation.encode() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if got := tt.args.dst.String(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("KeyframesInformation.Encode() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
