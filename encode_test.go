@@ -12,7 +12,7 @@ func TestUnmarshalJSON(t *testing.T) {
 		{
 	    	"atrule":{
 				"ident":{
-					"type":"char",
+					"type":"charset",
 					"info": {"value":"asf"}
 				}
 			},
@@ -61,7 +61,7 @@ func TestMarshalJSON(t *testing.T) {
 		{
 			AtRule: &AtRule{
 				Identifier: Identifier{
-					Type: TextBytes("char"),
+					Type: TextBytes("charset"),
 					Information: &CharsetInformation{
 						Value: TextBytes("utf-8"),
 					},

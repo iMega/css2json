@@ -359,15 +359,6 @@ type Identifier struct {
 	Information interface{} `json:"info,omitempty"`
 }
 
-// MarshalJSON marshal TextBytes
-// func (v Identifier) MarshalJSON() ([]byte, error) {
-// 	switch v := v.Information.(Type) {
-// 	case CharsetInformation:
-// 		json.Marshal(v)
-// 	}
-// 	return json.Marshal(string(v))
-// }
-
 // UnmarshalJSON unmarshal TextBytes
 func (v *Identifier) UnmarshalJSON(b []byte) error {
 	var (
@@ -385,7 +376,7 @@ func (v *Identifier) UnmarshalJSON(b []byte) error {
 	}
 
 	switch stuff["type"] {
-	case "char":
+	case "charset":
 		info = &CharsetInformation{}
 	}
 
@@ -397,6 +388,7 @@ func (v *Identifier) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// CharsetInformation https://developer.mozilla.org/en-US/docs/Web/CSS/@charset
 type CharsetInformation struct {
 	Value TextBytes `json:"value"`
 }
