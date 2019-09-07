@@ -598,7 +598,11 @@ func TestTextBytes_MarshalJSON(t *testing.T) {
 		want    []byte
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			v:       TextBytes("red"),
+			want:    []byte(`"red"`),
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -608,7 +612,7 @@ func TestTextBytes_MarshalJSON(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("TextBytes.MarshalJSON() = %v, want %v", got, tt.want)
+				t.Errorf("TextBytes.MarshalJSON() = %q, want %q", got, tt.want)
 			}
 		})
 	}
@@ -627,6 +631,16 @@ func TestEncode(t *testing.T) {
 		{
 			args: args{
 				s: Statements{
+					{
+						AtRule: &AtRule{
+							Identifier: Identifier{
+								Type: TextBytes("charset"),
+								Information: &CharsetInformation{
+									Value: TextBytes("utf-8"),
+								},
+							},
+						},
+					},
 					{
 						Ruleset: &Ruleset{
 							Selectors: []Selector{
@@ -648,7 +662,7 @@ func TestEncode(t *testing.T) {
 					},
 				},
 			},
-			want:    []byte(`span{color:red}`),
+			want:    []byte(`@charset "utf-8";span{color:red};`),
 			wantErr: false,
 		},
 	}
@@ -660,7 +674,7 @@ func TestEncode(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Encode() = %v, want %v", got, tt.want)
+				t.Errorf("Encode() = %q, want %q", got, tt.want)
 			}
 		})
 	}
@@ -824,6 +838,63 @@ func TestCharsetInformation_encode(t *testing.T) {
 			}
 			if got := tt.args.dst.String(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("CharsetInformation.Encode() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestIdentifier_encode(t *testing.T) {
+	type fields struct {
+		Type        TextBytes
+		Information Information
+	}
+	type args struct {
+		dst *bytes.Buffer
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			fields: fields{
+				Type: TextBytes("charset"),
+				Information: &CharsetInformation{
+					Value: TextBytes("utf-8"),
+				},
+			},
+			args: args{
+				dst: &bytes.Buffer{},
+			},
+			want:    `@charset "utf-8"`,
+			wantErr: false,
+		},
+		{
+			fields: fields{
+				Type: TextBytes(""),
+				Information: &CharsetInformation{
+					Value: TextBytes("utf-8"),
+				},
+			},
+			args: args{
+				dst: &bytes.Buffer{},
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			v := &Identifier{
+				Type:        tt.fields.Type,
+				Information: tt.fields.Information,
+			}
+			if err := v.encode(tt.args.dst); (err != nil) != tt.wantErr {
+				t.Errorf("Identifier.encode() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if got := tt.args.dst.String(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Identifier.Encode() = %v, want %v", got, tt.want)
 			}
 		})
 	}

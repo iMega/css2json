@@ -46,6 +46,7 @@ func Encode(s Statements) ([]byte, error) {
 		if err := i.encode(buf); err != nil {
 			return nil, err
 		}
+		buf.WriteByte(semicolon)
 	}
 
 	return buf.Bytes(), nil
@@ -78,14 +79,7 @@ type AtRule struct {
 }
 
 func (v *AtRule) encode(dst *bytes.Buffer) error {
-	dst.WriteByte(atSign)
-	if _, err := dst.Write(v.Identifier.Type); err != nil {
-		return err
-	}
-
-	dst.WriteByte(space)
-
-	if err := v.Identifier.Information.encode(dst); err != nil {
+	if err := v.Identifier.encode(dst); err != nil {
 		return err
 	}
 
@@ -384,7 +378,7 @@ func (v *Identifier) UnmarshalJSON(b []byte) error {
 	}
 
 	ident := stuff["type"].(string)
-	if len(ident) == 0 {
+	if _, ok := identifierTypes[ident]; !ok {
 		return ErrNotExistsTypeIdentifier
 	}
 	info = identifierTypes[ident].(encoder)
@@ -397,6 +391,27 @@ func (v *Identifier) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+func (v *Identifier) encode(dst *bytes.Buffer) error {
+	if _, ok := identifierTypes[string(v.Type)]; !ok {
+		return ErrNotExistsTypeIdentifier
+	}
+
+	dst.WriteByte(atSign)
+
+	if _, err := dst.Write(v.Type); err != nil {
+		return err
+	}
+
+	dst.WriteByte(space)
+
+	if err := v.Information.encode(dst); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Information is a information of at-rule
 type Information interface {
 	encoder
 }
