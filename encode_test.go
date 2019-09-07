@@ -625,7 +625,7 @@ func TestEncode(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    []byte
+		want    string
 		wantErr bool
 	}{
 		{
@@ -662,7 +662,99 @@ func TestEncode(t *testing.T) {
 					},
 				},
 			},
-			want:    []byte(`@charset "utf-8";span{color:red};`),
+			want:    `@charset "utf-8";span{color:red};`,
+			wantErr: false,
+		},
+		{
+			args: args{
+				s: Statements{
+					{
+						AtRule: &AtRule{
+							Identifier: Identifier{
+								Type: TextBytes("media"),
+								Information: &MediaInformation{
+									Queries: []Query{
+										{
+											Type: &Type{
+												Value: TextBytes("all"),
+											},
+											Conditions: []Condition{
+												{
+													Operator: TextBytes("and"),
+													Feature:  TextBytes("max-width"),
+													Value:    TextBytes("699px"),
+												},
+												{
+													Operator: TextBytes("and"),
+													Feature:  TextBytes("max-width"),
+													Value:    TextBytes("520px"),
+												},
+											},
+										},
+										{
+											Conditions: []Condition{
+												{
+													Feature: TextBytes("max-width"),
+													Value:   TextBytes("1151px"),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					{
+						Ruleset: &Ruleset{
+							Selectors: []Selector{
+								{
+									Simple: Simple{
+										Element: TextBytes("#sidebar"),
+									},
+									Combinates: []Combinate{
+										{
+											Combinator: TextBytes(" "),
+											Simple: Simple{
+												Element: TextBytes("ul"),
+											},
+										},
+										{
+											Combinator: TextBytes(" "),
+											Simple: Simple{
+												Element: TextBytes("li"),
+											},
+										},
+										{
+											Combinator: TextBytes(" "),
+											Simple: Simple{
+												Element: TextBytes("a"),
+											},
+										},
+									},
+								},
+							},
+							Declarations: []Declaration{
+								{
+									Property: TextBytes("padding-left"),
+									Value: []TextBytes{
+										TextBytes("21px"),
+									},
+								},
+								{
+									Property: TextBytes("background"),
+									Value: []TextBytes{
+										TextBytes("url(../images/email.png)"),
+										TextBytes("left"),
+										TextBytes("center"),
+										TextBytes("no-repeat"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want:    `@media all and (max-width: 699px) and (min-width: 520px),(min-width: 1151px){#sidebar ul li a{padding-left:21px;background:url(../images/email.png) left center no-repeat}}`,
 			wantErr: false,
 		},
 	}
