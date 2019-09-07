@@ -10,6 +10,12 @@ import (
 func TestUnmarshalJSON(t *testing.T) {
 	js := []byte(`[
 		{
+	    	"atrule":{
+				"ident":{
+					"type":"char",
+					"info": {"value":"asf"}
+				}
+			},
 		  "ruleset": {
 			"selectors": [
 			  {
@@ -53,6 +59,11 @@ func TestUnmarshalJSON(t *testing.T) {
 func TestMarshalJSON(t *testing.T) {
 	s := Statements{
 		{
+			AtRule: &AtRule{
+				Identifier: Identifier{
+					Type: TextBytes("char"),
+				},
+			},
 			Ruleset: &Ruleset{
 				Selectors: []Selector{
 					{

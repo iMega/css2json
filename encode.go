@@ -71,14 +71,13 @@ func (v *Statement) encode(dst *bytes.Buffer) error {
 
 // AtRule
 type AtRule struct {
-	Identifier  TextBytes    `json:"type"`
-	Information interface{}  `json:"information,omitempty"`
-	Nested      []*Statement `json:"nested,omitempty"`
+	Identifier Identifier   `json:"ident"`
+	Nested     []*Statement `json:"nested,omitempty"`
 }
 
 func (v *AtRule) encode(dst *bytes.Buffer) error {
 	dst.WriteByte(atSign)
-	if _, err := dst.Write(v.Identifier); err != nil {
+	if _, err := dst.Write(v.Identifier.Type); err != nil {
 		return err
 	}
 
@@ -352,4 +351,51 @@ func encodeItemsIfExists(items []encoder, dst *bytes.Buffer, before, after write
 		}
 	}
 	return nil
+}
+
+type Identifier struct {
+	Type        TextBytes   `json:"type"`
+	Information interface{} `json:"info,omitempty"`
+}
+
+// MarshalJSON marshal TextBytes
+// func (v Identifier) MarshalJSON() ([]byte, error) {
+// 	switch v := v.Information.(Type) {
+// 	case CharsetInformation:
+// 		json.Marshal(v)
+// 	}
+// 	return json.Marshal(string(v))
+// }
+
+// UnmarshalJSON unmarshal TextBytes
+func (v *Identifier) UnmarshalJSON(b []byte) error {
+	var (
+		info  interface{}
+		stuff map[string]interface{}
+	)
+
+	if err := json.Unmarshal(b, &stuff); err != nil {
+		return err
+	}
+
+	tmp, err := json.Marshal(stuff["info"])
+	if err != nil {
+		return err
+	}
+
+	switch stuff["type"] {
+	case "char":
+		info = &CharsetInformation{}
+	}
+
+	if err := json.Unmarshal(tmp, info); err != nil {
+		return err
+	}
+	v.Information = info
+
+	return nil
+}
+
+type CharsetInformation struct {
+	Value TextBytes `json:"value"`
 }
