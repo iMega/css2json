@@ -284,33 +284,16 @@ func (v *Combinate) encode(dst *bytes.Buffer) error {
 	return v.Simple.encode(dst)
 }
 
-// Declaration is setting CSS properties
-type Declaration struct {
-	Property   TextBytes   `json:"property"`
-	Value      []TextBytes `json:"value,omitempty"`
-	ValueComma []TextBytes `json:"value_comma,omitempty"`
+// Value of property
+type Value struct {
+	ValueSpace []TextBytes `json:"values,omitempty"`
 }
 
-func (v *Declaration) encode(dst *bytes.Buffer) error {
-	if _, err := dst.Write(v.Property); err != nil {
+func (v *Value) encode(dst *bytes.Buffer) error {
+	data := bytes.Join(sliceValuesRaw(v.ValueSpace), []byte{space})
+	if _, err := dst.Write(data); err != nil {
 		return err
 	}
-	dst.WriteByte(colon)
-
-	if len(v.Value) > 0 {
-		data := bytes.Join(sliceValuesRaw(v.Value), []byte{space})
-		if _, err := dst.Write(data); err != nil {
-			return err
-		}
-	}
-
-	if len(v.ValueComma) > 0 {
-		data := bytes.Join(sliceValuesRaw(v.ValueComma), []byte{comma})
-		if _, err := dst.Write(data); err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -320,6 +303,30 @@ func sliceValuesRaw(v []TextBytes) [][]byte {
 		ret[k] = i
 	}
 	return ret
+}
+
+// Declaration is setting CSS properties
+type Declaration struct {
+	Property TextBytes `json:"property"`
+	Values   []Value   `json:"values,omitempty"`
+}
+
+func (v *Declaration) encode(dst *bytes.Buffer) error {
+	if _, err := dst.Write(v.Property); err != nil {
+		return err
+	}
+	dst.WriteByte(colon)
+
+	for idx, i := range v.Values {
+		if err := i.encode(dst); err != nil {
+			return err
+		}
+		if len(v.Values)-1 > idx {
+			dst.WriteByte(comma)
+		}
+	}
+
+	return nil
 }
 
 // TextBytes is a hack to get JSON to emit a []byte as a string

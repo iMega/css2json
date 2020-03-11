@@ -3,9 +3,118 @@ package css2json
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"testing"
 )
+
+func TestA(t *testing.T) {
+	s := Statements{
+		{
+			AtRule: &AtRule{
+				Identifier: Identifier{
+					Type: TextBytes("media"),
+					Information: &MediaInformation{
+						Queries: []Query{
+							{
+								Type: &Type{
+									Value: TextBytes("all"),
+								},
+								Conditions: []Condition{
+									{
+										Operator: TextBytes("and"),
+										Feature:  TextBytes("max-width"),
+										Value:    TextBytes("699px"),
+									},
+									{
+										Operator: TextBytes("and"),
+										Feature:  TextBytes("min-width"),
+										Value:    TextBytes("521px"),
+									},
+								},
+							},
+							{
+								Conditions: []Condition{
+									{
+										Feature: TextBytes("min-width"),
+										Value:   TextBytes("1151px"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Nested: []*Statement{
+					{
+						Ruleset: &Ruleset{
+							Selectors: []Selector{
+								{
+									Simple: Simple{
+										Element: TextBytes("#sidebar"),
+									},
+									Combinates: []Combinate{
+										{
+											Combinator: TextBytes(" "),
+											Simple: Simple{
+												Element: TextBytes("ul"),
+											},
+										},
+										{
+											Combinator: TextBytes(" "),
+											Simple: Simple{
+												Element: TextBytes("li"),
+											},
+										},
+										{
+											Combinator: TextBytes(" "),
+											Simple: Simple{
+												Element: TextBytes("a"),
+											},
+										},
+									},
+								},
+							},
+							Declarations: []Declaration{
+								{
+									Property: TextBytes("padding-left"),
+									Values: []Value{
+										{
+											ValueSpace: []TextBytes{
+												TextBytes("21px"),
+											},
+										},
+									},
+								},
+								{
+									Property: TextBytes("background-image"),
+									Values: []Value{
+										{
+											ValueSpace: []TextBytes{
+												TextBytes("url(../images/email.png)"),
+												TextBytes("left"),
+												TextBytes("center"),
+												TextBytes("no-repeat"),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	b, err := json.Marshal(s)
+	if err != nil {
+		t.Errorf("TestMarshalJSON error = %v", err)
+	}
+	fmt.Println(string(b))
+
+	b, _ = Encode(s)
+	fmt.Println(string(b))
+}
 
 func TestUnmarshalJSON(t *testing.T) {
 	js := []byte(`[
@@ -27,16 +136,21 @@ func TestUnmarshalJSON(t *testing.T) {
 			"declarations": [
 			  {
 				"property": "color",
-				"value": [
-				  "red"
+				"values": [
+				  {"values":["red"]}
 				]
 			  },
 			  {
 				"property": "border",
-				"value": [
-				  "1px",
-				  "solid",
-				  "red"
+				"values": [
+				  {"values":["1px", "solid", "red"]}
+				]
+			  },
+			  {
+				"property":"background-position",
+				"values":[
+				  {"values":["0px","10px"]},
+				  {"values":["right","3em","bottom","2em"]}
 				]
 			  }
 			]
@@ -50,9 +164,9 @@ func TestUnmarshalJSON(t *testing.T) {
 	a[0].Ruleset.encode(buf)
 	got := buf.String()
 
-	want := `p{color:red;border:1px solid red}`
+	want := `p{color:red;border:1px solid red;background-position:0px 10px,right 3em bottom 2em}`
 	if want != got {
-		t.Errorf("TestUnmarshalJSON() = %v, want %v", got, want)
+		t.Errorf("TestUnmarshalJSON() = \n%v, want \n%v", got, want)
 	}
 }
 
@@ -78,8 +192,12 @@ func TestMarshalJSON(t *testing.T) {
 				Declarations: []Declaration{
 					{
 						Property: TextBytes("color"),
-						Value: []TextBytes{
-							TextBytes("red"),
+						Values: []Value{
+							{
+								ValueSpace: []TextBytes{
+									TextBytes("red"),
+								},
+							},
 						},
 					},
 				},
@@ -92,7 +210,7 @@ func TestMarshalJSON(t *testing.T) {
 		t.Errorf("TestMarshalJSON error = %v", err)
 	}
 
-	want := `[{"atrule":{"ident":{"type":"charset","info":{"value":"utf-8"}}},"ruleset":{"selectors":[{"simple":{"element":"p"}}],"declarations":[{"property":"color","value":["red"]}]}}]`
+	want := `[{"atrule":{"ident":{"type":"charset","info":{"value":"utf-8"}}},"ruleset":{"selectors":[{"simple":{"element":"p"}}],"declarations":[{"property":"color","values":[{"values":["red"]}]}]}}]`
 	got := string(b)
 	if got != want {
 		t.Errorf("TestMarshalJSON() = %v, want %v", got, want)
@@ -343,7 +461,7 @@ func TestSimple_encode(t *testing.T) {
 func TestDeclaration_encode(t *testing.T) {
 	type fields struct {
 		Property TextBytes
-		Value    []TextBytes
+		Values   []Value
 	}
 	type args struct {
 		dst *bytes.Buffer
@@ -358,8 +476,12 @@ func TestDeclaration_encode(t *testing.T) {
 		{
 			fields: fields{
 				Property: TextBytes("color"),
-				Value: []TextBytes{
-					TextBytes("red"),
+				Values: []Value{
+					{
+						ValueSpace: []TextBytes{
+							TextBytes("red"),
+						},
+					},
 				},
 			},
 			args: args{
@@ -368,13 +490,73 @@ func TestDeclaration_encode(t *testing.T) {
 			want:    `color:red`,
 			wantErr: false,
 		},
+		{
+			fields: fields{
+				Property: TextBytes("background-image"),
+				Values: []Value{
+					{
+						ValueSpace: []TextBytes{
+							TextBytes("linear-gradient(rgba(0, 0, 255, 0.5)"),
+						},
+					},
+					{
+						ValueSpace: []TextBytes{
+							TextBytes("rgba(255, 255, 0, 0.5))"),
+						},
+					},
+					{
+						ValueSpace: []TextBytes{
+							TextBytes(`url("../../media/examples/lizard.png")`),
+						},
+					},
+				},
+			},
+			args: args{
+				dst: &bytes.Buffer{},
+			},
+			want:    `background-image:linear-gradient(rgba(0, 0, 255, 0.5),rgba(255, 255, 0, 0.5)),url("../../media/examples/lizard.png")`,
+			wantErr: false,
+		},
+		{
+			fields: fields{
+				Property: TextBytes("background-position"),
+				Values: []Value{
+					{
+						ValueSpace: []TextBytes{
+							TextBytes("0px"),
+							TextBytes("10px"),
+						},
+					},
+					{
+						ValueSpace: []TextBytes{
+							TextBytes("right"),
+							TextBytes("3em"),
+							TextBytes("bottom"),
+							TextBytes("2em"),
+						},
+					},
+				},
+			},
+			args: args{
+				dst: &bytes.Buffer{},
+			},
+			want:    `background-position:0px 10px,right 3em bottom 2em`,
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			v := &Declaration{
 				Property: tt.fields.Property,
-				Value:    tt.fields.Value,
+				Values:   tt.fields.Values,
 			}
+
+			b, err := json.Marshal(v)
+			if err != nil {
+				t.Errorf("TestMarshalJSON error = %v", err)
+			}
+			fmt.Println(string(b))
+
 			if err := v.encode(tt.args.dst); (err != nil) != tt.wantErr {
 				t.Errorf("Declaration.encode() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -563,8 +745,12 @@ func TestRuleset_encode(t *testing.T) {
 				Declarations: []Declaration{
 					{
 						Property: []byte("color"),
-						Value: []TextBytes{
-							TextBytes("red"),
+						Values: []Value{
+							{
+								ValueSpace: []TextBytes{
+									TextBytes("red"),
+								},
+							},
 						},
 					},
 				},
@@ -653,8 +839,12 @@ func TestEncode(t *testing.T) {
 							Declarations: []Declaration{
 								{
 									Property: TextBytes("color"),
-									Value: []TextBytes{
-										TextBytes("red"),
+									Values: []Value{
+										{
+											ValueSpace: []TextBytes{
+												TextBytes("red"),
+											},
+										},
 									},
 								},
 							},
@@ -735,17 +925,25 @@ func TestEncode(t *testing.T) {
 										Declarations: []Declaration{
 											{
 												Property: TextBytes("padding-left"),
-												Value: []TextBytes{
-													TextBytes("21px"),
+												Values: []Value{
+													{
+														ValueSpace: []TextBytes{
+															TextBytes("21px"),
+														},
+													},
 												},
 											},
 											{
 												Property: TextBytes("background"),
-												Value: []TextBytes{
-													TextBytes("url(../images/email.png)"),
-													TextBytes("left"),
-													TextBytes("center"),
-													TextBytes("no-repeat"),
+												Values: []Value{
+													{
+														ValueSpace: []TextBytes{
+															TextBytes("url(../images/email.png)"),
+															TextBytes("left"),
+															TextBytes("center"),
+															TextBytes("no-repeat"),
+														},
+													},
 												},
 											},
 										},
@@ -770,22 +968,42 @@ func TestEncode(t *testing.T) {
 									Declarations: []Declaration{
 										{
 											Property: TextBytes("font-family"),
-											Value: []TextBytes{
-												TextBytes("MyHelvetica"),
+											Values: []Value{
+												{
+													ValueSpace: []TextBytes{
+														TextBytes("MyHelvetica"),
+													},
+												},
 											},
 										},
 										{
 											Property: TextBytes("src"),
-											ValueComma: []TextBytes{
-												TextBytes(`local("Helvetica Neue Bold")`),
-												TextBytes(`local(HelveticaNeue-Bold)`),
-												TextBytes(`url(MgOpenModernaBold.ttf)`),
+											Values: []Value{
+												{
+													ValueSpace: []TextBytes{
+														TextBytes(`local("Helvetica Neue Bold")`),
+													},
+												},
+												{
+													ValueSpace: []TextBytes{
+														TextBytes(`local(HelveticaNeue-Bold)`),
+													},
+												},
+												{
+													ValueSpace: []TextBytes{
+														TextBytes(`url(MgOpenModernaBold.ttf)`),
+													},
+												},
 											},
 										},
 										{
 											Property: TextBytes("font-weight"),
-											Value: []TextBytes{
-												TextBytes("700"),
+											Values: []Value{
+												{
+													ValueSpace: []TextBytes{
+														TextBytes("700"),
+													},
+												},
 											},
 										},
 									},
@@ -862,8 +1080,12 @@ func TestStatement_encode(t *testing.T) {
 					Declarations: []Declaration{
 						{
 							Property: []byte("color"),
-							Value: []TextBytes{
-								TextBytes("red"),
+							Values: []Value{
+								{
+									ValueSpace: []TextBytes{
+										TextBytes("red"),
+									},
+								},
 							},
 						},
 					},
@@ -941,8 +1163,12 @@ func TestAtRule_encode(t *testing.T) {
 							Declarations: []Declaration{
 								{
 									Property: TextBytes("margin-left"),
-									Value: []TextBytes{
-										TextBytes("0px"),
+									Values: []Value{
+										{
+											ValueSpace: []TextBytes{
+												TextBytes("0px"),
+											},
+										},
 									},
 								},
 							},
@@ -960,14 +1186,22 @@ func TestAtRule_encode(t *testing.T) {
 							Declarations: []Declaration{
 								{
 									Property: TextBytes("margin-left"),
-									Value: []TextBytes{
-										TextBytes("110px"),
+									Values: []Value{
+										{
+											ValueSpace: []TextBytes{
+												TextBytes("110px"),
+											},
+										},
 									},
 								},
 								{
 									Property: TextBytes("opacity"),
-									Value: []TextBytes{
-										TextBytes("0.9"),
+									Values: []Value{
+										{
+											ValueSpace: []TextBytes{
+												TextBytes("0.9"),
+											},
+										},
 									},
 								},
 							},
@@ -985,8 +1219,12 @@ func TestAtRule_encode(t *testing.T) {
 							Declarations: []Declaration{
 								{
 									Property: TextBytes("margin-left"),
-									Value: []TextBytes{
-										TextBytes("200px"),
+									Values: []Value{
+										{
+											ValueSpace: []TextBytes{
+												TextBytes("200px"),
+											},
+										},
 									},
 								},
 							},
@@ -1361,6 +1599,33 @@ func TestCondition_encode(t *testing.T) {
 			}
 			if got := tt.args.dst.String(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Condition.Encode() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestFontFaceInformation_encode(t *testing.T) {
+	type fields struct {
+		Declarations []Declaration
+	}
+	type args struct {
+		dst *bytes.Buffer
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			v := &FontFaceInformation{
+				Declarations: tt.fields.Declarations,
+			}
+			if err := v.encode(tt.args.dst); (err != nil) != tt.wantErr {
+				t.Errorf("FontFaceInformation.encode() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
