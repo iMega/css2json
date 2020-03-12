@@ -26,9 +26,6 @@ const (
 )
 
 var (
-	// ErrNotExistsSelector A selector is a chain of one or more
-	// sequences of simple selectors separated by combinators.
-	ErrNotExistsSelector = errors.New("not exists selector")
 	// ErrNotExistsDeclaration
 	ErrNotExistsDeclaration = errors.New("not exists declaration")
 	// ErrNotExistsTypeIdentifier
@@ -103,10 +100,6 @@ type Ruleset struct {
 }
 
 func (v *Ruleset) encode(dst *bytes.Buffer) error {
-	if len(v.Selectors) == 0 {
-		return ErrNotExistsSelector
-	}
-
 	if len(v.Declarations) == 0 {
 		return ErrNotExistsDeclaration
 	}
