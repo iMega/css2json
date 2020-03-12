@@ -214,11 +214,11 @@ func (v *Pseudo) encode(dst *bytes.Buffer) error {
 	}
 
 	if len(v.Func) > 0 {
-		dst.WriteByte(40)
+		dst.WriteByte(leftParenthesis)
 		if _, err := dst.Write(v.Func); err != nil {
 			return err
 		}
-		dst.WriteByte(41)
+		dst.WriteByte(rightParenthesis)
 	}
 
 	return nil
