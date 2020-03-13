@@ -119,50 +119,69 @@ func TestA(t *testing.T) {
 func TestUnmarshalJSON(t *testing.T) {
 	js := []byte(`[
 		{
-	    	"atrule":{
-				"ident":{
-					"type":"charset",
-					"info": {"value":"asf"}
-				}
-			},
-		  "ruleset": {
-			"selectors": [
-			  {
-				"simple": {
-				  "element": "p"
-				}
-			  }
-			],
-			"declarations": [
-			  {
-				"property": "color",
-				"values": [
-				  {"values":["red"]}
+			"ruleset": {
+				"selectors": [
+					{
+						"simple": {
+							"element": "p"
+						}
+					}
+				],
+				"declarations": [
+					{
+						"property": "color",
+						"values": [
+							{
+								"values": [
+									"red"
+								]
+							}
+						]
+					},
+					{
+						"property": "border",
+						"values": [
+							{
+								"values": [
+									"1px",
+									"solid",
+									"red"
+								]
+							}
+						]
+					},
+					{
+						"property": "background-position",
+						"values": [
+							{
+								"values": [
+									"0px",
+									"10px"
+								]
+							},
+							{
+								"values": [
+									"right",
+									"3em",
+									"bottom",
+									"2em"
+								]
+							}
+						]
+					}
 				]
-			  },
-			  {
-				"property": "border",
-				"values": [
-				  {"values":["1px", "solid", "red"]}
-				]
-			  },
-			  {
-				"property":"background-position",
-				"values":[
-				  {"values":["0px","10px"]},
-				  {"values":["right","3em","bottom","2em"]}
-				]
-			  }
-			]
-		  }
+			}
 		}
-	  ]`)
+	]`)
 
 	a := Statements{}
 	json.Unmarshal(js, &a)
 	buf := &bytes.Buffer{}
 	a[0].Ruleset.encode(buf)
 	got := buf.String()
+
+	// b, _ := Encode(a)
+	// fmt.Printf(string(b))
 
 	want := `p{color:red;border:1px solid red;background-position:0px 10px,right 3em bottom 2em}`
 	if want != got {

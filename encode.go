@@ -43,7 +43,6 @@ func Encode(s Statements) ([]byte, error) {
 		if err := i.encode(buf); err != nil {
 			return nil, err
 		}
-		buf.WriteByte(semicolon)
 	}
 
 	return buf.Bytes(), nil
