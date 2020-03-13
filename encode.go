@@ -449,6 +449,7 @@ func (v *CharsetInformation) encode(dst *bytes.Buffer) error {
 		return err
 	}
 	dst.WriteByte(doubleQuote)
+	dst.WriteByte(semicolon)
 
 	return nil
 }

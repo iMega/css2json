@@ -871,7 +871,7 @@ func TestEncode(t *testing.T) {
 					},
 				},
 			},
-			want:    []byte(`@charset "utf-8";span{color:red};`),
+			want:    []byte(`@charset "utf-8";span{color:red}`),
 			wantErr: false,
 		},
 		{
@@ -973,7 +973,7 @@ func TestEncode(t *testing.T) {
 					},
 				},
 			},
-			want:    []byte(`@media all and (max-width:699px) and (min-width:520px),(min-width:1151px){#sidebar ul li a{padding-left:21px;background:url(../images/email.png) left center no-repeat}};`),
+			want:    []byte(`@media all and (max-width:699px) and (min-width:520px),(min-width:1151px){#sidebar ul li a{padding-left:21px;background:url(../images/email.png) left center no-repeat}}`),
 			wantErr: false,
 		},
 		{
@@ -1032,7 +1032,7 @@ func TestEncode(t *testing.T) {
 					},
 				},
 			},
-			want:    []byte(`@font-face {font-family:MyHelvetica;src:local("Helvetica Neue Bold"),local(HelveticaNeue-Bold),url(MgOpenModernaBold.ttf);font-weight:700};`),
+			want:    []byte(`@font-face {font-family:MyHelvetica;src:local("Helvetica Neue Bold"),local(HelveticaNeue-Bold),url(MgOpenModernaBold.ttf);font-weight:700}`),
 			wantErr: false,
 		},
 	}
@@ -1079,7 +1079,7 @@ func TestStatement_encode(t *testing.T) {
 			args: args{
 				dst: &bytes.Buffer{},
 			},
-			want: `@charset "utf-8"`,
+			want: `@charset "utf-8";`,
 		},
 		{
 			fields: fields{
@@ -1159,7 +1159,7 @@ func TestAtRule_encode(t *testing.T) {
 			args: args{
 				dst: &bytes.Buffer{},
 			},
-			want: `@charset "utf-8"`,
+			want: `@charset "utf-8";`,
 		},
 		{
 			fields: fields{
@@ -1294,7 +1294,7 @@ func TestCharsetInformation_encode(t *testing.T) {
 			args: args{
 				dst: &bytes.Buffer{},
 			},
-			want: `"utf-8"`,
+			want: `"utf-8";`,
 		},
 	}
 	for _, tt := range tests {
@@ -1337,7 +1337,7 @@ func TestIdentifier_encode(t *testing.T) {
 			args: args{
 				dst: &bytes.Buffer{},
 			},
-			want:    `@charset "utf-8"`,
+			want:    `@charset "utf-8";`,
 			wantErr: false,
 		},
 		{
