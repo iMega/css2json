@@ -380,7 +380,6 @@ func (v *Identifier) UnmarshalJSON(b []byte) error {
 		info  Information
 		stuff map[string]interface{}
 	)
-
 	if err := json.Unmarshal(b, &stuff); err != nil {
 		return err
 	}
@@ -399,6 +398,7 @@ func (v *Identifier) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(tmp, info); err != nil {
 		return err
 	}
+	v.Type = TextBytes(ident)
 	v.Information = info
 
 	return nil

@@ -171,6 +171,97 @@ func TestUnmarshalJSON(t *testing.T) {
 					}
 				]
 			}
+		},
+		{
+			"atrule":{
+				"ident":{
+					"type":"keyframes",
+					"info":{
+						"value": "animate1"
+					}
+				},
+				"nested":[
+					{
+						"ruleset": {
+							"selectors": [
+								{
+									"simple": {
+										"element": "from"
+									}
+								}
+							],
+							"declarations": [
+								{
+									"property": "margin-left",
+									"values": [
+										{
+											"values": [
+												"0px"
+											]
+										}
+									]
+								}
+							]
+						}
+					},
+					{
+						"ruleset": {
+							"selectors": [
+								{
+									"simple": {
+										"element": "50%"
+									}
+								}
+							],
+							"declarations": [
+								{
+									"property": "margin-left",
+									"values": [
+										{
+											"values": [
+												"110px"
+											]
+										}
+									]
+								},
+								{
+									"property": "opacity",
+									"values": [
+										{
+											"values": [
+												"0.9"
+											]
+										}
+									]
+								}
+							]
+						}
+					},
+					{
+						"ruleset": {
+							"selectors": [
+								{
+									"simple": {
+										"element": "to"
+									}
+								}
+							],
+							"declarations": [
+								{
+									"property": "margin-left",
+									"values": [
+										{
+											"values": [
+												"200px"
+											]
+										}
+									]
+								}
+							]
+						}
+					}
+				]
+			}
 		}
 	]`)
 
@@ -180,8 +271,8 @@ func TestUnmarshalJSON(t *testing.T) {
 	a[0].Ruleset.encode(buf)
 	got := buf.String()
 
-	// b, _ := Encode(a)
-	// fmt.Printf(string(b))
+	// b, e := Encode(a)
+	// fmt.Printf("%s\n%s\n\n", string(b), e)
 
 	want := `p{color:red;border:1px solid red;background-position:0px 10px,right 3em bottom 2em}`
 	if want != got {
