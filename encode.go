@@ -377,8 +377,9 @@ type Identifier struct {
 // UnmarshalJSON unmarshal TextBytes
 func (v *Identifier) UnmarshalJSON(b []byte) error {
 	var (
-		info  Information
-		stuff map[string]interface{}
+		info         Information
+		localEncoder interface{}
+		stuff        map[string]interface{}
 	)
 	if err := json.Unmarshal(b, &stuff); err != nil {
 		return err
@@ -390,14 +391,26 @@ func (v *Identifier) UnmarshalJSON(b []byte) error {
 	}
 
 	ident := stuff["type"].(string)
-	if _, ok := identifierTypes[ident]; !ok {
+
+	switch ident {
+	case "charset":
+		localEncoder = &CharsetInformation{}
+	case "keyframes":
+		localEncoder = &KeyframesInformation{}
+	case "media":
+		localEncoder = &MediaInformation{}
+	case "font-face":
+		localEncoder = &FontFaceInformation{}
+	default:
 		return ErrNotExistsTypeIdentifier
 	}
-	info = identifierTypes[ident].(encoder)
 
-	if err := json.Unmarshal(tmp, info); err != nil {
+	info, _ = localEncoder.(encoder)
+
+	if err := json.Unmarshal(tmp, &info); err != nil {
 		return err
 	}
+
 	v.Type = TextBytes(ident)
 	v.Information = info
 
